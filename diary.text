@@ -1,0 +1,33 @@
+1. Tải Springboot extension pack trên vs code
+
+-> nhập trên search ">Spring inittialz"
+
+2. Tải docker
+Lên ms store tải docker
+Lên ms store tải Ubuntu
+
+3. Tải extension docker về.
+
+4. Tạo database bằng docker
+Mở command prompt
+docker run --name smartbox-db -e MYSQL_ROOT_PASSWORD=1234 -e MYSQL_DATABASE=smartbox_db -p 3306:3306 -d mysql:8.0
+
+tên smartbox-db
+MYSQL_ROOT_PASSWORD=1234
+  
+Sau này nếu mở dự án lên mà docker chưa chạy thì mở lại docker ->container và bấm play
+
+5. Thêm thư viện vào pom.xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+
+<dependency>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+    <scope>runtime</scope>
+</dependency>
+
+6. Kết nối database bằng database client (extension)
+127.0.0.1 port 3306
