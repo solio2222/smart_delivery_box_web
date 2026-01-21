@@ -32,6 +32,7 @@ import lombok.NoArgsConstructor;
 
 public class Account {
     @Id
+    private String accountId;
     private String phoneNumber;
     private String passWord;
     private String userName;
