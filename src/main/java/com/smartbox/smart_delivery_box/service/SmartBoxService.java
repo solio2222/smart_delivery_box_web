@@ -1,0 +1,74 @@
+package com.smartbox.smart_delivery_box.service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.smartbox.smart_delivery_box.Enum.SmartBoxStatus;
+import com.smartbox.smart_delivery_box.entity.SmartBox;
+import com.smartbox.smart_delivery_box.repository.SmartBoxRepository;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class SmartBoxService {
+
+    private final SmartBoxRepository smartBoxRepository;
+
+    public List<SmartBox> getAvailableSmartBoxes() {
+        // Chỉ cần gọi hàm này, Database sẽ tự động tìm và chỉ trả về những tủ trống
+        return smartBoxRepository.findByOrderIsNull();
+    }
+
+    public SmartBox getSmartBoxById(Long id) {
+        // Tìm tủ theo id nếu không có thì ném lỗi
+        return smartBoxRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tủ số: " + id));
+    }
+
+    public List<SmartBox> getSmartBoxByOrderId(Long orderId) {
+        return smartBoxRepository.findByOrder_Id(orderId);
+    }
+
+    public ArrayList<Long> getAvailableBoxIDs() {
+        List<SmartBox> availableBoxes = getAvailableSmartBoxes();
+        ArrayList<Long> boxIDs = new ArrayList<>();
+        for (SmartBox box : availableBoxes) {
+            boxIDs.add(box.getId());
+        }
+        return boxIDs;
+    }
+
+    public void updateSmartBox(List<SmartBox> boxes) {
+        smartBoxRepository.saveAll(boxes);
+    }
+
+    public void updateSmartBox(SmartBox box) {
+        smartBoxRepository.save(box);
+    }
+
+    @Transactional
+    public void closeBox(Long boxId) {
+        SmartBox box = getSmartBoxById(boxId);
+        if (box.getStatus() != SmartBoxStatus.WAITING) {
+            throw new RuntimeException("Tủ số " + boxId + " không ở trạng thái WAITING, không thể xác nhận đóng cửa!");
+        }
+        box.setStatus(SmartBoxStatus.OCCUPIED); // Cập nhật trạng thái thành OCCUPIED khi Shipper đã đóng cửa tủ
+        smartBoxRepository.save(box);
+    }
+
+    public List<SmartBox> getWaitingSmartBoxes() {
+        return smartBoxRepository.findByStatus(SmartBoxStatus.WAITING);
+    }
+
+    // Dừng để cancel từng tủ trong lúc quét timeout
+    public void cancelBox(Long boxId) {
+        SmartBox box = getSmartBoxById(boxId);
+        box.setStatus(SmartBoxStatus.FREE);
+        box.setOrder(null);
+        smartBoxRepository.save(box);
+    }
+}

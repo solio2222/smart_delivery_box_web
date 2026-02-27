@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Delivery Box Kiosk</title>
+    <style>
+        /* Reset CSS & Layout cơ bản */
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { margin: 0; display: flex; height: 100vh; background-color: #f0f2f5; overflow: hidden; }
+
+        /* THANH ĐIỀU HƯỚNG BÊN TRÁI (Black Bar) */
+        .sidebar {
+            width: 250px;
+            background-color: #1a1a1a;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding-top: 30px;
+        }
+        .sidebar h2 { text-align: center; margin-bottom: 40px; color: #4CAF50; }
+        .menu-item {
+            padding: 20px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.3s;
+            border-left: 5px solid transparent;
+        }
+        .menu-item:hover { background-color: #333; }
+        .menu-item.active { background-color: #333; border-left-color: #4CAF50; font-weight: bold; }
+
+        /* KHU VỰC NỘI DUNG CHÍNH (Không có top bar) */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* HỘP NỘI DUNG TRONG SUỐT (Clear Box) */
+        .clear-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 600px;
+            display: none; /* Ẩn mặc định, sẽ dùng JS để hiển thị */
+        }
+        .clear-box.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        h3 { margin-top: 0; color: #333; font-size: 24px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        
+        /* FORM INPUTS */
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
+        input[type="text"] {
+            width: 100%; padding: 15px; font-size: 18px; border: 1px solid #ccc;
+            border-radius: 8px; outline: none; transition: border 0.3s;
+        }
+        input[type="text"]:focus { border-color: #4CAF50; }
+
+        /* NÚT CHỌN TỦ (Selectable & Change Color) */
+        .box-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 10px; }
+        .box-item {
+            padding: 15px 25px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #555;
+            background-color: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+        .box-item.selected {
+            background-color: #4CAF50;
+            color: white;
+            border-color: #2E7D32;
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+        }
+
+        /* NÚT BẤM (Submit) */
+        .btn-submit {
+            width: 100%; padding: 15px; font-size: 18px; font-weight: bold;
+            color: white; background-color: #4CAF50; border: none;
+            border-radius: 8px; cursor: pointer; margin-top: 20px; transition: background 0.3s;
+        }
+        .btn-submit:hover { background-color: #45a049; }
+
+        /* NÚT RECORD Ở DƯỚI CÙNG */
+        .record-btn-container {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        .record-btn {
+            background-color: #ff4757; color: white; border: none; padding: 15px 30px;
+            font-size: 16px; border-radius: 50px; cursor: pointer; display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 4px 12px rgba(255, 71, 87, 0.4); transition: transform 0.2s;
+        }
+        .record-btn:active { transform: scale(0.95); }
+
+        #message-area { margin-top: 20px; font-weight: bold; text-align: center; }
+        .success { color: #2E7D32; }
+        .error { color: #d32f2f; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>SMART BOX</h2>
+        <div class="menu-item active" onclick="switchTab('shipper-view', this)">📦 Gửi Hàng (Shipper)</div>
+        <div class="menu-item" onclick="switchTab('customer-view', this)">👤 Nhận Hàng (Khách)</div>
+    </div>
+
+    <div class="main-content">
+        
+        <div id="shipper-view" class="clear-box active">
+            <h3>Tạo Đơn Gửi Hàng</h3>
+            <div class="form-group">
+                <label>Số điện thoại khách hàng:</label>
+                <input type="text" id="phone-input" placeholder="Nhập SĐT (VD: 0987654321)">
+            </div>
+            <div class="form-group">
+                <label>Chọn các tủ trống để gửi đồ:</label>
+                <div id="available-boxes-grid" class="box-grid">
+                    <i>Đang tải danh sách tủ...</i>
+                </div>
+            </div>
+            <button class="btn-submit" onclick="createOrder()">XÁC NHẬN GỬI HÀNG</button>
+            <div id="shipper-msg" id="message-area"></div>
+        </div>
+
+        <div id="customer-view" class="clear-box">
+            <h3>Lấy Hàng Đã Gửi</h3>
+            <div class="form-group">
+                <label>Nhập mã OTP (6 số):</label>
+                <input type="text" id="otp-input" placeholder="Nhập mã OTP của bạn..." maxlength="6">
+            </div>
+            <button class="btn-submit" onclick="verifyOtp()">MỞ TỦ LẤY HÀNG</button>
+            <div id="customer-msg" id="message-area"></div>
+        </div>
+
+        <div class="record-btn-container">
+            <button class="record-btn" onclick="alert('Chức năng nhận diện giọng nói đang được phát triển!')">
+                🎤 Nhập bằng giọng nói
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:8080/api/orders";
+        let selectedBoxIds = [];
+
+        // 1. CHUYỂN ĐỔI QUA LẠI GIỮA 2 MÀN HÌNH
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.clear-box').forEach(box => box.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            
+            document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+
+            // Xóa thông báo cũ
+            document.getElementById('shipper-msg').innerHTML = '';
+            document.getElementById('customer-msg').innerHTML = '';
+
+            // Nếu qua màn hình Shipper thì load lại tủ trống
+            if(tabId === 'shipper-view') loadAvailableBoxes();
+        }
+
+        // 2. GỌI API LẤY DANH SÁCH TỦ TRỐNG VÀ VẼ LÊN MÀN HÌNH
+        async function loadAvailableBoxes() {
+            const grid = document.getElementById('available-boxes-grid');
+            try {
+                const response = await fetch(`${API_BASE}/available-boxes`);
+                const data = await response.json();
+                
+                if(data.status === 'success') {
+                    grid.innerHTML = '';
+                    selectedBoxIds = []; // Reset list
+                    
+                    if(data.available_boxes.length === 0) {
+                        grid.innerHTML = '<span style="color:red">Hiện tại đã hết tủ trống!</span>';
+                        return;
+                    }
+
+                    data.available_boxes.forEach(boxId => {
+                        const boxDiv = document.createElement('div');
+                        boxDiv.className = 'box-item';
+                        boxDiv.innerText = `Tủ ${boxId}`;
+                        
+                        // Hiệu ứng chọn tủ đổi màu
+                        boxDiv.onclick = function() {
+                            this.classList.toggle('selected');
+                            if(this.classList.contains('selected')) {
+                                selectedBoxIds.push(boxId);
+                            } else {
+                                selectedBoxIds = selectedBoxIds.filter(id => id !== boxId);
+                            }
+                        };
+                        grid.appendChild(boxDiv);
+                    });
+                }
+            } catch (error) {
+                grid.innerHTML = '<span class="error">Không thể kết nối đến máy chủ!</span>';
+            }
+        }
+
+        // 3. GỌI API TẠO ĐƠN HÀNG (SHIPPER)
+        async function createOrder() {
+            const phone = document.getElementById('phone-input').value;
+            const msgDiv = document.getElementById('shipper-msg');
+
+            if(!phone) return showMsg(msgDiv, 'Vui lòng nhập số điện thoại!', 'error');
+            if(selectedBoxIds.length === 0) return showMsg(msgDiv, 'Vui lòng chọn ít nhất 1 tủ!', 'error');
+
+            try {
+                const response = await fetch(`${API_BASE}/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phoneNumber: phone, boxIds: selectedBoxIds })
+                });
+                
+                const data = await response.json();
+                if(data.status === 'success') {
+                    showMsg(msgDiv, data.message, 'success');
+                    document.getElementById('phone-input').value = ''; // Xóa trắng form
+                    loadAvailableBoxes(); // Tải lại danh sách tủ
+                } else {
+                    showMsg(msgDiv, data.message, 'error');
+                }
+            } catch (error) {
+                showMsg(msgDiv, 'Lỗi kết nối máy chủ!', 'error');
+            }
+        }
+
+        // 4. GỌI API NHẬP OTP (KHÁCH HÀNG)
+        async function verifyOtp() {
+            const otp = document.getElementById('otp-input').value;
+            const msgDiv = document.getElementById('customer-msg');
+
+            if(otp.length !== 6) return showMsg(msgDiv, 'Vui lòng nhập đúng 6 số OTP!', 'error');
+
+            try {
+                const response = await fetch(`${API_BASE}/verify-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ otp: otp })
+                });
+                
+                const data = await response.json();
+                if(data.status === 'success') {
+                    showMsg(msgDiv, data.message, 'success');
+                    document.getElementById('otp-input').value = '';
+                } else {
+                    showMsg(msgDiv, data.message, 'error');
+                }
+            } catch (error) {
+                showMsg(msgDiv, 'Lỗi kết nối máy chủ!', 'error');
+            }
+        }
+
+        function showMsg(element, text, type) {
+            element.innerHTML = `<br><span class="${type}">${text}</span>`;
+        }
+
+        // Chạy lần đầu khi mở web
+        loadAvailableBoxes();
+    </script>
+</body>
+</html>
