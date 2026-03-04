@@ -82,7 +82,7 @@ public class MQTTService {
             String jsonPayload = objectMapper.writeValueAsString(data);
 
             MqttMessage message = new MqttMessage(jsonPayload.getBytes());
-            message.setQos(1); 
+            message.setQos(1); // Không cần 2 vì code arduino không bị lỗi bởi tin nhắn trùng.
             client.publish(topicCommand, message);
             
             System.out.println("📤 Đã gửi lệnh xuống ESP32: " + jsonPayload);

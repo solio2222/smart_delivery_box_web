@@ -3,6 +3,7 @@ package com.smartbox.smart_delivery_box.controller;
 import com.smartbox.smart_delivery_box.entity.DeliveryOrder;
 import com.smartbox.smart_delivery_box.entity.SmartBox;
 import com.smartbox.smart_delivery_box.service.DeliveryService;
+import com.smartbox.smart_delivery_box.service.MailService;
 import com.smartbox.smart_delivery_box.service.SmartBoxService;
 import lombok.RequiredArgsConstructor;
 
@@ -19,8 +20,9 @@ import java.util.Map;
 public class OrderController {
 
     // CHỈ CẦN TIÊM 2 ÔNG SERVICE NÀY LÀ ĐỦ (Bỏ @Autowired đi)
-    private final DeliveryService orderService; 
+    private final DeliveryService orderService;
     private final SmartBoxService smartBoxService;
+    private final MailService emailService;
 
     // ==========================================
     // API 0: LẤY DANH SÁCH TỦ TRỐNG CHO MÀN HÌNH CHÍNH
@@ -33,8 +35,7 @@ public class OrderController {
             List<Long> availableBoxIds = smartBoxService.getAvailableBoxIDs();
             return ResponseEntity.ok(Map.of(
                     "status", "success",
-                    "available_boxes", availableBoxIds
-            ));
+                    "available_boxes", availableBoxIds));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Lỗi lấy danh sách tủ: " + e.getMessage());
         }
@@ -48,7 +49,7 @@ public class OrderController {
         try {
             // 1. Lấy dữ liệu từ Frontend gửi lên
             String phoneNumber = (String) request.get("phoneNumber");
-            
+
             // Xử lý an toàn kiểu dữ liệu (tránh lỗi ClassCastException)
             List<Integer> rawBoxIds = (List<Integer>) request.get("boxIds");
             List<Long> boxIds = rawBoxIds.stream().map(Integer::longValue).toList();
@@ -60,14 +61,12 @@ public class OrderController {
             return ResponseEntity.ok(Map.of(
                     "status", "success",
                     "order_id", newOrder.getId(),
-                    "message", "Đã lưu đơn hàng. Các tủ " + boxIds + " đã mở khóa, mời Shipper cất hàng!"
-            ));
+                    "message", "Đã lưu đơn hàng. Các tủ " + boxIds + " đã mở khóa, mời Shipper cất hàng!"));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
                     "status", "error",
-                    "message", "Lỗi tạo đơn: " + e.getMessage()
-            ));
+                    "message", "Lỗi tạo đơn: " + e.getMessage()));
         }
     }
 
@@ -82,23 +81,21 @@ public class OrderController {
 
             // 2. Xác thực OTP và tự động gọi ESP32 mở tủ (Đã lo liệu trong Service)
             DeliveryOrder order = orderService.verifyOtp(otpInput);
-            
+
             if (order == null) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "status", "error",
-                        "message", "Mã OTP không hợp lệ hoặc đơn hàng chưa sẵn sàng!"
-                ));
+                        "message", "Mã OTP không hợp lệ hoặc đơn hàng chưa sẵn sàng!"));
             }
 
             return ResponseEntity.ok(Map.of(
                     "status", "success",
-                    "message", "Xác thực thành công! Tủ đã mở, mời bạn nhận hàng."
-            ));
+                    "message", "Xác thực thành công! Tủ đã mở, mời bạn nhận hàng."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
                     "status", "error",
-                    "message", "Lỗi xác thực: " + e.getMessage()
-            ));
+                    "message", "Lỗi xác thực: " + e.getMessage()));
         }
     }
+
 }

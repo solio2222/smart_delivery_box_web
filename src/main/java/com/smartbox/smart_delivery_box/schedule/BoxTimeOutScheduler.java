@@ -21,7 +21,7 @@ public class BoxTimeOutScheduler {
     private final DeliveryService deliveryService;
     private final MQTTService mqttService;
 
-    @Scheduled(fixedRate = 60000) // Chạy mỗi 1 phút
+    @Scheduled(fixedRate = 20000) // Chạy mỗi 1 phút
     @Transactional
     public void scanBoxTimeOut() {
         List<SmartBox> waitingBoxes = smartBoxService.getWaitingSmartBoxes();
@@ -29,7 +29,7 @@ public class BoxTimeOutScheduler {
 
         for (SmartBox box : waitingBoxes) {
             DeliveryOrder order = box.getOrder();
-            if (order != null && order.getCreatedAt().plusMinutes(5).isBefore(now)) {
+            if (order != null && order.getCreatedAt().plusMinutes(1).isBefore(now)) {
 
                 smartBoxService.cancelBox(box.getId());
                 deliveryService.minusBoxesFromOrder(1L, order);

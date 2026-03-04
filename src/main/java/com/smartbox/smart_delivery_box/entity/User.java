@@ -27,4 +27,7 @@ public class User {
     // Quan hệ 1 User có thể có nhiều DeliveryOrders
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL /* Xóa user thì xóa các DeliveryOrders liên quan */, fetch = FetchType.LAZY)
     private List<DeliveryOrder> deliveryOrders;
+
+    @Column(name = "email", nullable = false, unique = true)
+    private String email;
 }

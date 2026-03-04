@@ -5,6 +5,7 @@ import com.smartbox.smart_delivery_box.entity.SmartBox;
 import com.smartbox.smart_delivery_box.Enum.OrderStatus;
 import com.smartbox.smart_delivery_box.Enum.SmartBoxStatus;
 import com.smartbox.smart_delivery_box.repository.DeliveryOrderRepository;
+import com.smartbox.smart_delivery_box.service.MailService;
 import com.smartbox.smart_delivery_box.service.SmartBoxService;
 import lombok.RequiredArgsConstructor;
 
@@ -20,13 +21,13 @@ public class OrderScheduler {
 
     private final DeliveryOrderRepository orderRepository;
     private final SmartBoxService smartBoxService;
+    private final MailService mailService;
 
-    // Chạy mỗi 30 giây (hoặc bạn có thể để 60000 = 1 phút tùy ý)
-
-    /*Method này được dùng để quét các order
-    Nếu 
-    */
-    @Scheduled(fixedRate = 30000)
+    /*
+     * Method này được dùng để quét các order
+     * Nếu
+     */
+    @Scheduled(fixedRate = 15000)
     @Transactional
     public void reconcileOrderStatus() {
 
@@ -56,11 +57,9 @@ public class OrderScheduler {
                 System.out.println("🔄 [Scheduler] Đơn hàng " + order.getId()
                         + " đã đủ số lượng tủ đóng. Chuyển trạng thái sang HOLDING!");
 
-                // ==========================================
-                // ĐÂY LÀ NƠI GỌI HÀM GỬI SMS/EMAIL MÃ OTP CHO KHÁCH
-                // ==========================================
+                mailService.sendOrderConfirmEmail(order.getUser().getEmail(), boxes, order.getOtp());
             }
         }
-        System.out.println(pendingOrders.size() + " đơn hàng đã được quét vào "+java.time.LocalDateTime.now());
+        System.out.println(pendingOrders.size() + " đơn hàng đã được quét vào " + java.time.LocalDateTime.now());
     }
 }
