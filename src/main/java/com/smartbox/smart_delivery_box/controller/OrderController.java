@@ -16,10 +16,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/orders")
 @CrossOrigin(origins = "*")
-@RequiredArgsConstructor // Khởi tạo Constructor tự động cho private final
+@RequiredArgsConstructor 
 public class OrderController {
 
-    // CHỈ CẦN TIÊM 2 ÔNG SERVICE NÀY LÀ ĐỦ (Bỏ @Autowired đi)
     private final DeliveryService orderService;
     private final SmartBoxService smartBoxService;
     private final MailService emailService;
@@ -31,7 +30,6 @@ public class OrderController {
     @GetMapping("/available-boxes")
     public ResponseEntity<?> getAvailableBoxes() {
         try {
-            // Gọi hàm getAvailableBoxIDs() mà bạn đã viết sẵn cực xịn trong SmartBoxService
             List<Long> availableBoxIds = smartBoxService.getAvailableBoxIDs();
             return ResponseEntity.ok(Map.of(
                     "status", "success",
@@ -47,17 +45,13 @@ public class OrderController {
     @PostMapping("/create")
     public ResponseEntity<?> createOrder(@RequestBody Map<String, Object> request) {
         try {
-            // 1. Lấy dữ liệu từ Frontend gửi lên
             String phoneNumber = (String) request.get("phoneNumber");
 
-            // Xử lý an toàn kiểu dữ liệu (tránh lỗi ClassCastException)
             List<Integer> rawBoxIds = (List<Integer>) request.get("boxIds");
             List<Long> boxIds = rawBoxIds.stream().map(Integer::longValue).toList();
 
-            // 2. Tạo đơn hàng mới & Tự động gọi ESP32 (Đã được lo liệu trong Service)
             DeliveryOrder newOrder = orderService.createNewOrder(phoneNumber, boxIds);
 
-            // 3. Trả kết quả về cho Web hiển thị
             return ResponseEntity.ok(Map.of(
                     "status", "success",
                     "order_id", newOrder.getId(),
@@ -76,10 +70,8 @@ public class OrderController {
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody Map<String, Object> request) {
         try {
-            // 1. Lấy mã OTP khách nhập trên màn hình
             String otpInput = (String) request.get("otp");
 
-            // 2. Xác thực OTP và tự động gọi ESP32 mở tủ (Đã lo liệu trong Service)
             DeliveryOrder order = orderService.verifyOtp(otpInput);
 
             if (order == null) {

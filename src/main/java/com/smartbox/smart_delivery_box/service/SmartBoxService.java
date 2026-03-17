@@ -19,12 +19,10 @@ public class SmartBoxService {
     private final SmartBoxRepository smartBoxRepository;
 
     public List<SmartBox> getAvailableSmartBoxes() {
-        // Chỉ cần gọi hàm này, Database sẽ tự động tìm và chỉ trả về những tủ trống
         return smartBoxRepository.findByOrderIsNull();
     }
 
     public SmartBox getSmartBoxById(Long id) {
-        // Tìm tủ theo id nếu không có thì ném lỗi
         return smartBoxRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tủ số: " + id));
     }
@@ -56,7 +54,7 @@ public class SmartBoxService {
         if (box.getStatus() != SmartBoxStatus.WAITING) {
             throw new RuntimeException("Tủ số " + boxId + " không ở trạng thái WAITING, không thể xác nhận đóng cửa!");
         }
-        box.setStatus(SmartBoxStatus.OCCUPIED); // Cập nhật trạng thái thành OCCUPIED khi Shipper đã đóng cửa tủ
+        box.setStatus(SmartBoxStatus.OCCUPIED); 
         smartBoxRepository.save(box);
     }
 
